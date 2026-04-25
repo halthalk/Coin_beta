@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>H-Coin Pro Ultimate</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #ffd700;
+            --blue: #00bfff;
+            --bronze: #cd7f32;
+            --purple: #9d00ff;
+            --bg: #000000;
+            --surface: #1c1c1e;
+            --surface-light: #2c2c2e;
+            --text: #ffffff;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+            box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg); color: var(--text); font-family: 'Cairo', sans-serif;
+            margin: 0; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+            transition: background 0.5s ease-in-out;
+        }
+
+        /* --- Backgrounds --- */
+        body.rank-Bronze { background: radial-gradient(circle at center, #3d261e 0%, #000 100%); }
+        body.rank-Silver { background: radial-gradient(circle at center, #7a7a7a 0%, #000 100%); }
+        body.rank-Gold { background: radial-gradient(circle at center, #6e5508 0%, #000 100%); }
+        body.rank-Platinum { background: radial-gradient(circle at center, #366675 0%, #000 100%); }
+        body.rank-Diamond { background: radial-gradient(circle at center, #252a5c 0%, #000 100%); }
+        body.rank-Master { background: radial-gradient(circle at center, #5e003a 0%, #000 100%); }
+        body.rank-GrandMaster { background: radial-gradient(circle at center, #520000 0%, #000 100%); }
+        body.rank-Elite { background: radial-gradient(circle at center, #003812 0%, #000 100%); }
+        body.rank-Legendary { background: radial-gradient(circle at center, #5c2600 0%, #000 100%); }
+        
+body.is-premium { 
+    background: radial-gradient(circle at center, #551a00 0%, #000 100%) !important; 
+    border: none !important; 
+}
+body.turbo-active { 
+    background: radial-gradient(circle at center, #7a2800 0%, #000 100%) !important; 
+    border: none !important;
+}
+body.rank-Mythic {
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%) !important;
+    overflow: hidden;
+    position: relative;
+}
+.shooting-star {
+    position: absolute;
+    top: -50px;
+    width: 2px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.8));
+    transform: rotate(135deg);
+    z-index: 1;
+    pointer-events: none;
+}
+@keyframes shoot {
+    0% { transform: translate(0, 0) rotate(135deg); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translate(120vw, 120vh) rotate(135deg); opacity: 0; }
+}
+
+        /* --- Components --- */
+        .btn-primary {
+            background: var(--gold); color: #000; border: none; padding: 12px 20px;
+            border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer;
+            transition: transform 0.1s; font-size: 16px;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+        .btn-primary:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        .btn-check { background: var(--blue); color: white; }
+
+        .btn-premium {
+            background: linear-gradient(45deg, #9d00ff, #ff00cc);
+            color: white; box-shadow: 0 0 15px var(--purple);
+            margin-top: 10px;
+        }
+
+        /* --- Game Stage --- */
+        .game-stage {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: space-evenly; padding-top: var(--safe-top);
+            padding-bottom: calc(90px + var(--safe-bottom)); width: 100%;
+        }
+
+        .score-container { text-align: center; z-index: 10; }
+        .league-badge {
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+            font-size: 14px; color: #ccc; margin-bottom: 5px; display: inline-block;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .score-val { font-size: clamp(45px, 12vw, 70px); font-weight: 900; line-height: 1; }
+
+        .coin-btn {
+            width: min(45vh, 85vw); height: min(45vh, 85vw);
+            max-width: 360px; max-height: 360px;
+            border-radius: 50%; cursor: pointer; position: relative; z-index: 5;
+            transform-style: preserve-3d; transition: transform 0.1s;
+        }
+        .coin-inner {
+            width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+            border: 4px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .coin-inner img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .coin-inner.turbo { border-color: #ff4500; box-shadow: 0 0 80px #ff4500; animation: shake 0.5s infinite; }
+        
+        .is-premium .coin-inner { border: none !important; box-shadow: none !important; }
+ 
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(2deg); } 75% { transform: rotate(-2deg); } }
+
+        .energy-hud { width: 85%; max-width: 400px; }
+        .energy-bar { background: #333; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 5px; }
+        .energy-fill { height: 100%; background: linear-gradient(90deg, var(--gold), orange); width: 100%; transition: width 0.2s; }
+        .is-premium .energy-fill { background: linear-gradient(90deg, var(--purple), #ff00cc); }
+
+        /* --- Navigation --- */
+        .nav-bar {
+            position: fixed; bottom: calc(10px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
+            width: 96%; max-width: 500px; background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px); border-radius: 25px; display: flex;
+            justify-content: space-between; padding: 10px 10px; z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            background: none; border: none; color: #666; font-size: 10px; font-weight: 700;
+            transition: 0.3s; width: 18%;
+        }
+        .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+        .nav-item.active { color: var(--gold); transform: translateY(-2px); }
+
+        /* --- Modals/Sections --- */
+        .section {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+            background: var(--bg); z-index: 50; overflow-y: auto;
+            padding: calc(20px + var(--safe-top)) 20px calc(100px + var(--safe-bottom));
+        }
+        .section-title { font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; color: var(--text); }
+        
+        .card {
+            background: var(--surface); border-radius: 16px; padding: 15px;
+            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- Profile --- */
+        .profile-header { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .avatar {
+            width: 80px; height: 80px; border-radius: 50%; background: #333;
+            border: 3px solid var(--gold); overflow: hidden; display: flex; align-items: center; justify-content: center;
+            font-size: 30px; color: #fff; font-weight: bold;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-details { text-align: center; }
+        .user-tag { color: #888; font-size: 14px; margin-top: 4px; }
+        
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #333; font-size: 14px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #aaa; }
+        .info-val { color: #fff; font-weight: bold; font-family: monospace; }
+        
+        /* Updated Wallet Button */
+        .wallet-btn {
+            background: #0098EA; color: white; border: none; padding: 12px; width: 100%;
+            border-radius: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 10px; cursor: pointer;
+        }
+        .wallet-connected { background: #2c2c2e; border: 1px solid #0098EA; color: #0098EA; }
+
+        /* --- Earn --- */
+        .daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .daily-item {
+            background: var(--surface-light); border-radius: 10px; padding: 10px 5px;
+            text-align: center; opacity: 0.5; border: 1px solid transparent;
+        }
+        .daily-item.active { opacity: 1; border-color: var(--gold); background: rgba(255, 215, 0, 0.1); }
+        .daily-item.claimed { opacity: 0.5; background: #222; color: #444; text-decoration: line-through; }
+        .daily-day { font-size: 10px; color: #aaa; margin-bottom: 5px; }
+        .daily-val { font-size: 12px; font-weight: bold; color: var(--gold); }
+
+        .task-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--surface); padding: 12px; border-radius: 12px; margin-bottom: 10px;
+        }
+        .task-info { flex: 1; }
+        .task-title { font-size: 14px; font-weight: bold; }
+        .task-reward { font-size: 12px; color: var(--gold); }
+
+        /* --- Shop --- */
+        .shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding-bottom: 50px; }
+        
+        .shop-card {
+            background: var(--surface); border-radius: 15px; padding: 15px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .shop-card:active { transform: scale(0.98); }
+        .shop-card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        .shop-card h4 { margin: 5px 0; font-size: 14px; color: #fff; }
+        
+        .btn-shop { width: 100%; padding: 8px; font-size: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-buy-point { background: var(--gold); color: #000; }
+        .btn-buy-ton { background: #0098EA; color: #fff; }
+        .btn-select { background: #333; color: #fff; }
+        .btn-used { background: #1a1a1a; color: #555; cursor: default; border: 1px solid #333; }
+        /* --- Leaderboard --- */
+        .leaderboard-row { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
+        .rank-num { width: 30px; font-weight: bold; color: #888; }
+        .rank-1 { color: var(--gold); }
+        .rank-2 { color: silver; }
+        .rank-3 { color: #cd7f32; }
+        .lb-user { flex: 1; display: flex; align-items: center; gap: 10px; }
+        .lb-avatar { width: 30px; height: 30px; border-radius: 50%; background: #444; color: #fff; text-align: center; line-height: 30px; font-size: 12px;}
+        .lb-score { font-weight: bold; color: var(--gold); font-size: 14px; }
+
+        /* --- Particles & Rocket --- */
+        .particle {
+            position: absolute; pointer-events: none; animation: pop 0.8s ease-out forwards;
+            font-weight: 900; font-size: 28px; color: white; z-index: 100;
+        }
+        @keyframes pop {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.5); opacity: 0; }
+        }
+
+        .turbo-rocket {
+            position: absolute; font-size: 50px; cursor: pointer; z-index: 99;
+            animation: float 4s ease-in-out infinite;
+        }
+        /* --- Lucky Chest & Premium Timer --- */
+        .lucky-chest {
+            position: absolute;
+            font-size: 50px;
+            cursor: pointer;
+            z-index: 1000;
+            filter: drop-shadow(0 0 15px var(--gold));
+            animation: chestFloat 3s ease-in-out infinite, chestSpawn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+        }
+
+        @keyframes chestFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @keyframes chestSpawn {
+            from { transform: scale(0) rotate(-180deg); opacity: 0; }
+            to { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        #premium-timer {
+            position: fixed;
+            top: calc(70px + var(--safe-top));
+            right: 20px;
+            background: linear-gradient(45deg, #9d00ff, #ff00cc);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 900;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 0 15px rgba(157, 0, 255, 0.6);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* --- Toasts --- */
+        #toast-container {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; width: 90%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid var(--gold);
+            color: #fff; padding: 15px; border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 10px;
+            animation: slideIn 0.3s ease-out forwards; pointer-events: auto;
+        }
+        .toast.success { border-left-color: #00ff88; }
+        .toast.error { border-left-color: #ff3333; }
+        .toast.info { border-left-color: var(--blue); }
+
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
+
+        /* --- Custom Modal --- */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px); animation: fadeIn 0.2s;
+        }
+        .custom-modal {
+            background: #1c1c1e; width: 85%; max-width: 320px;
+            padding: 25px; border-radius: 20px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: scale(0.9);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-confirm { background: var(--gold); color: #000; }
+
+        @keyframes popIn { to { transform: scale(1); } }
+        /* --- Ads Section Styles --- */
+.ads-banner {
+    background: linear-gradient(135deg, #ff4500, #ff8c00);
+    color: white; padding: 20px; border-radius: 20px; text-align: center;
+    margin: 15px 0; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 69, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; position: relative; overflow: hidden;
+}
+.ads-banner:active { transform: scale(0.97); }
+.ads-banner h3 { margin: 0; font-size: 20px; font-weight: 900; }
+.ads-banner p { margin: 5px 0 0; font-size: 12px; opacity: 0.9; }
+.ad-input-area {
+    width: 100%; background: #111; border: 1px solid #333; color: white;
+    padding: 15px; border-radius: 12px; font-family: 'Cairo', sans-serif;
+    font-size: 14px; min-height: 120px; resize: none; margin-bottom: 15px; transition: 0.3s;
+}
+.ad-input-area:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,215,0,0.2); }
+.tier-card {
+    background: var(--surface-light); border: 2px solid transparent;
+    padding: 12px; border-radius: 15px; margin-bottom: 10px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; transition: 0.2s;
+}
+.tier-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.1); }
+.tier-info h4 { margin: 0; font-size: 15px; color: white; }
+.tier-info p { margin: 3px 0 0; font-size: 11px; color: #aaa; }
+.tier-price { text-align: right; }
+.price-coin { color: var(--gold); font-weight: bold; font-size: 13px; display: block; }
+.price-ton { color: var(--blue); font-weight: bold; font-size: 13px; display: block; }
+.ads-footer-btns {
+    position: fixed;
+    bottom: 85px; /* المسافة دي عشان يظهر فوق الـ Nav Bar الأساسي ومايغطيش عليه */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 480px;
+    background: rgba(28, 28, 30, 0.95);
+    backdrop-filter: blur(15px);
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    z-index: 1100;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.4);
+}
+
+.btn-pay {
+    flex: 1;
+    border: none;
+    border-radius: 15px;
+    padding: 14px;
+    font-weight: 900;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* زر دفع العملات - ذهبي */
+.btn-pay-points {
+    background: linear-gradient(135deg, #ffd700 0%, #ffae00 100%);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* زر دفع TON - أزرق كريستالي */
+.btn-pay-ton {
+    background: linear-gradient(135deg, #0098EA 0%, #0056b3 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 152, 234, 0.3);
+}
+
+.btn-pay:active {
+    transform: scale(0.92);
+    filter: brightness(1.1);
+}
+
+.btn-pay .btn-subtext {
+    font-size: 10px;
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+/* تأثير اللمعان (Shine Effect) */
+.btn-pay::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(45deg);
+    transition: 0.5s;
+    pointer-events: none;
+}
+
+.btn-pay:hover::after {
+    left: 120%;
+}
+    </style>
+</head>
+<body class="rank-Bronze">
+
+    <div id="toast-container"></div>
+    <div id="premium-timer"></div>
+
+
+    <div id="custom-modal" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <h3 id="modal-title" style="margin-top:0; color:white;">Confirm</h3>
+            <p id="modal-msg" style="color:#ccc; font-size:14px; margin-bottom:20px;">Are you sure?</p>
+            <div class="modal-btns">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn btn-confirm" id="modal-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mine-section" class="game-stage">
+        <div class="score-container">
+            <div class="league-badge" id="league-display">Bronze</div>
+            <div class="score-val"><span id="score">0</span></div>
+        </div>
+
+        <div class="coin-btn" id="coin-btn">
+            <div class="coin-inner" id="coin-visual">
+                <img src="https://raw.githubusercontent.com/halthalk/car/cfdeeba8911952a1ec29378f39476f1cec9c649e/20260114_190253.png" draggable="false">
+            </div>
+        </div>
+
+        <div class="energy-hud">
+            <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold; color:#ccc;">
+                <span>⚡ Energy</span>
+                <span><span id="curr-energy">1000</span> / <span id="max-energy">1000</span></span>
+            </div>
+            <div class="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
+        </div>
+    </div>
+
+    <div id="profile-section" class="section">
+        <h2 class="section-title">My Profile</h2>
+        
+        <div class="card profile-header">
+            <div class="avatar" id="profile-avatar">U</div>
+            <div class="user-details">
+                <h3 style="margin:0;" id="profile-name">Loading...</h3>
+                <div class="user-tag" id="profile-username">@username</div>
+                <div id="premium-status-text" style="color:var(--purple); font-weight:bold; display:none; margin-top:5px;">💎 H-Coin Premium</div>
+            </div>
+            
+            <button class="wallet-btn" id="btn-connect-wallet" onclick="connectWallet()">
+                <span id="wallet-icon">💼</span> <span id="wallet-text">Connect TON Wallet</span>
+            </button>
+        </div>
+
+        <h3 style="margin-bottom:10px;">Account Info</h3>
+        <div class="card">
+            <div class="info-row">
+                <span class="info-label">User ID</span>
+                <span class="info-val" id="profile-id">---</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Language</span>
+                <span class="info-val" id="profile-lang">---</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Premium</span>
+                <span class="info-val" id="profile-premium" style="color:#ff4500;">No</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Taps</span>
+                <span class="info-val" id="profile-taps">0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Invites</span>
+                <span class="info-val" id="profile-invites">0</span>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom:10px;">🏆 Leaderboard</h3>
+        <div class="card" id="leaderboard-list"></div>
+    </div>
+
+    <div id="earn-section" class="section">
+        <h2 class="section-title">Earn Coins</h2>
+        
+        <div class="card" style="background: linear-gradient(135deg, #1c1c1e, #2a2a2a); border: 1px solid var(--blue);">
+            <h3 style="margin-top:0;">🤝 Invite Friends</h3>
+            <p style="font-size:13px; color:#aaa;">Invite friends to H-Coin Robot and get <span style="color:var(--gold); font-weight:bold;">500 Coins</span> per friend!</p>
+            <button class="btn-primary" style="background:var(--blue); color:white;" onclick="inviteFriend()">🔗 Share Invite Link</button>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-top:0;">📅 Daily Rewards</h3>
+            <div class="daily-grid" id="daily-grid"></div>
+            <button class="btn-primary" id="btn-claim-daily" onclick="claimDaily()" disabled>Check Next Reward</button>
+        </div>
+
+        <h3 style="margin-bottom:10px;">🚀 Tasks List</h3>
+        <div id="tasks-list"></div>
+    </div>
+
+    <div id="boosts-section" class="section">
+        <h2 class="section-title">Boosters</h2>
+        
+        <div class="card" style="border: 2px solid var(--purple); background: rgba(157, 0, 255, 0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; color:white;">👑 HCoin Premium</h3>
+                <span style="font-size:24px;">💎</span>
+            </div>
+            <p style="font-size:12px; color:#ccc; margin:10px 0; line-height: 1.6;">
+    - 2x Multiplier per tap<br>
+    - <b>Blue Verification Badge</b> 
+    <svg style="width:14px; height:14px; vertical-align:middle; margin-left:2px;" viewBox="0 0 24 24">
+        <path fill="#0098EA" d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" />
+    </svg><br>
+    - Exclusive Purple Look<br>
+    - +5000 Max Energy Bonus<br>
+    <strong style="color: var(--blue);">PAYMENT VIA TON WALLET</strong>
+</p>
+            <button class="btn-primary btn-premium" id="btn-buy-premium" onclick="buyPremium()">
+                Buy for 5 TON 💎
+            </button>
+        </div>
+<div class="ads-banner" onclick="openAdsManager()">
+    <h3>📢 Make Ads</h3>
+    <p>Promote your content to our community!</p>
+    <div style="position:absolute; right:-10px; bottom:-5px; font-size:50px; opacity:0.1;">📣</div>
+</div>
+
+        <h3 style="margin:10px 0;">Normal Upgrades</h3>
+        <div id="boosts-list"></div>
+    </div>
+
+    <div id="shop-section" class="section">
+        <h2 class="section-title">Skin Shop</h2>
+        <div style="background: rgba(255,215,0,0.1); padding:10px; border-radius:10px; margin-bottom:20px; text-align:center; font-size:12px; color:var(--gold);">
+            🎨 Skins change your coin look instantly!
+        </div>
+        <div class="shop-grid" id="shop-container">
+            </div>
+    </div>
+   <div id="ads-section" class="section" style="z-index: 1000;">
+    <div style="display:flex; align-items:center; margin-bottom:20px;">
+        <button onclick="closeAdsManager()" style="background:none; border:none; color:white; font-size:24px; padding-right:15px; cursor:pointer;">⬅️</button>
+        <h2 style="margin:0;">Ads Manager</h2>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; color:var(--gold); font-size: 16px;">1. Post Content</h3>
+        <textarea id="ad-text-input" class="ad-input-area" placeholder="Enter your message, links, and emojis here..."></textarea>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; color:var(--gold); font-size: 16px;">2. Select Reach</h3>
+        <div class="tier-card" id="tier-1" onclick="selectAdTier(1)">
+            <div class="tier-info"><h4>Basic Pack</h4><p>Post in 1 Channel</p></div>
+            <div class="tier-price"><span class="price-coin">1M Coins</span><span class="price-ton">0.5 TON</span></div>
+        </div>
+        <div class="tier-card" id="tier-2" onclick="selectAdTier(2)">
+            <div class="tier-info"><h4>Pro Pack</h4><p>Post in 2 Channels</p></div>
+            <div class="tier-price"><span class="price-coin">2M Coins</span><span class="price-ton">1.0 TON</span></div>
+        </div>
+        <div class="tier-card" id="tier-3" onclick="selectAdTier(3)">
+            <div class="tier-info"><h4>Ultimate Pack 🔥</h4><p>Post in ALL 4 Channels</p></div>
+            <div class="tier-price"><span class="price-coin">3.5M Coins</span><span class="price-ton">2.0 TON</span></div>
+        </div>
+    </div>
+
+    <div class="ads-footer-btns">
+    <button class="btn-pay btn-pay-points" onclick="processAdPayment('points')">
+        <span>Pay with Coins</span>
+        <span class="btn-subtext">Instant Access</span>
+    </button>
+    
+    <button class="btn-pay btn-pay-ton" onclick="processAdPayment('ton')">
+        <span>Pay with TON 💎</span>
+        <span class="btn-subtext">Priority Post</span>
+    </button>
+</div>
+</div>
+
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="nav('mine', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20H5.5L12 5.5z"/></svg>
+            Mine
+        </button>
+        <button class="nav-item" onclick="nav('earn', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            Earn
+        </button>
+        <button class="nav-item" onclick="nav('boosts', this)">
+            <svg viewBox="0 0 24 24"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.5 2.54l2.53 1.27c.63-1.21 1-2.6 1-4.06 0-5.36-4.34-9.7-9-9.7zM12 18c-3.31 0-6-2.69-6-6 0-1.65.67-3.15 1.76-4.24L6.34 6.34C4.9 7.79 4 9.79 4 12c0 4.42 3.58 8 8 8 2.21 0 4.21-.9 5.66-2.34l-1.42-1.42C15.15 17.33 13.65 18 12 18zm.3-15.05h-1.7v3.08c-2.84.48-5.2 2.65-5.96 5.47h3.04c.55-1.2 1.63-2.07 2.92-2.07v-6.48z"/></svg>
+            Boosts
+        </button>
+        <button class="nav-item" onclick="nav('shop', this)">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            Shop
+        </button>
+        <button class="nav-item" onclick="nav('profile', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Profile
+        </button>
+    </div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+/* ----------------------------------------------------------------
+   🛡️ H-COIN PRO: ADVANCED SECURITY & ANTI-TAMPER SYSTEM
+   Status: ACTIVE | Encryption: ENABLED | Layer: CLIENT-SIDE
+   ----------------------------------------------------------------
+*/
+(function(_0xGuard) {
+    const _ctrlKeys = [73, 74, 67, 85, 83]; // I, J, C, U, S
+    const _dangerZone = () => {
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace("about:blank");
+        } catch (e) {}
+    };
+
+    // 1. نظام كشف المحللين (Self-Destruct Debugger)
+    const _check = function() {
+        const _start = performance.now();
+        debugger;
+        if (performance.now() - _start > 40) {
+            console.warn("⚠️ SECURITY BREACH DETECTED!");
+            _dangerZone();
+        }
+    };
+
+    // 2. قفل اختصارات الكيبورد (Keyboard Lockdown)
+    window.addEventListener('keydown', (e) => {
+        const isF12 = e.keyCode === 123;
+        const isDevTools = e.ctrlKey && e.shiftKey && _ctrlKeys.includes(e.keyCode);
+        const isSource = e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83);
+
+        if (isF12 || isDevTools || isSource) {
+            e.preventDefault();
+            if(window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+            }
+            return false;
+        }
+    }, true);
+
+    // 3. منع التفاعلات المشبوهة (Mouse & UI Protection)
+    const _stopEvent = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', _stopEvent);
+    document.addEventListener('dragstart', _stopEvent);
+    
+    // 4. مراقبة حجم النافذة (Console Resize Detection)
+    window.addEventListener('resize', () => {
+        if ((window.outerHeight - window.innerHeight) > 160 || (window.outerWidth - window.innerWidth) > 160) {
+            _dangerZone();
+        }
+    });
+
+    // تشغيل الحماية الدائمة
+    setInterval(_check, 800);
+    console.log("%c 🛡️ H-Coin Shield Active", "color: gold; font-weight: bold; font-size: 14px;");
+
+})(window);
+/* ---------------------------------------------------------------- */
+    tg.setHeaderColor('#000000'); tg.setBackgroundColor('#000000');
+
+    // --- YOUR WALLET & CONFIG ---
+    const MY_WALLET_ADDRESS = "UQCUNNp-zznGq7eR3LUchhByYeaCXWOPqnrBDdI_q6-vnGai";
+    const PREMIUM_PRICE_TON = "5"; // Price in TON (Display)
+    const PREMIUM_PRICE_NANO = "5000000000"; // 5 TON * 1,000,000,000
+
+    const BOT_USERNAME = "HCoinRobot"; 
+    
+    // --- TON CONNECT SETUP ---
+    // UPDATED WITH YOUR MANIFEST URL
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: 'https://raw.githubusercontent.com/halthalk/coin/main/tonconnect-manifest.json', 
+    });
+    const AD_CHANNELS = [
+    { botToken: '8120309389:AAHIzpPn6uFu1OxicNkI-sPGOeV7mTNkHqU', chatId: '-1003682305595' },
+    { botToken: '8527332075:AAFBdfGhzm1cWg3eiw3UXjjxUhqj2XMoycA', chatId: '-1003549578798' },
+    { botToken: '8408181959:AAFjNuO_WUSC6VPXB12Y-34VdqBx4OcTVcU', chatId: '-1003512197460' },
+    { botToken: '8547272166:AAFwhcsgB4gH__c59vZkSg_B3zcSHgLojvs', chatId: '-1003303877017' }
+];
+const AD_PRICES = { 1: { count: 1, points: 1000000, ton: 0.5 }, 2: { count: 2, points: 2000000, ton: 1.0 }, 3: { count: 4, points: 3500000, ton: 2.0 } };
+let selectedAdTier = 1;
+function openAdsManager() { document.getElementById('ads-section').style.display = 'block'; selectAdTier(1); }
+function closeAdsManager() { document.getElementById('ads-section').style.display = 'none'; }
+function selectAdTier(tier) { selectedAdTier = tier; document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected')); document.getElementById(`tier-${tier}`).classList.add('selected'); }
+async function processAdPayment(method) {
+    const text = document.getElementById('ad-text-input').value.trim();
+    if(!text) { showToast("Write your ad first!", "error"); return; }
+    
+    // --- نظام الـ Cooldown (ساعة واحدة) ---
+    const now = Date.now();
+    const cooldownTime = 60 * 60 * 1000; 
+    const lastPost = gameData.lastAdPost || 0;
+    const timeLeft = lastPost + cooldownTime - now;
+
+    if (timeLeft > 0) {
+        const minutesLeft = Math.ceil(timeLeft / (60 * 1000));
+        showToast(`Wait ${minutesLeft} minutes before posting again! ⏳`, "error");
+        return;
+    }
+    // ------------------------------------
+
+    const tierData = AD_PRICES[selectedAdTier];
+
+    if(method === 'points') {
+        if(gameData.score >= tierData.points) {
+            showModal("Confirm Payment", `Post ad for ${tierData.points.toLocaleString()} coins?`, async (ok) => {
+                if(ok) { 
+                    gameData.score -= tierData.points;
+                    gameData.lastAdPost = Date.now(); // حفظ وقت النشر
+                    updateUI(); 
+                    saveGame(); 
+                    await sendAdToTelegram(text, tierData.count); 
+                }
+            });
+        } else { showToast("Not enough coins!", "error"); }
+    } else {
+        if(!tonConnectUI.connected) { showToast("Connect wallet first!", "error"); return; }
+        
+        showModal("Confirm TON Payment", `Post ad for ${tierData.ton} TON?`, async (ok) => {
+            if(ok) {
+                try {
+                    showToast("Waiting for transaction...", "info");
+                    const result = await tonConnectUI.sendTransaction({
+                        validUntil: Math.floor(Date.now() / 1000) + 600,
+                        messages: [{
+                            address: MY_WALLET_ADDRESS,
+                            amount: (tierData.ton * 1e9).toString()
+                        }]
+                    });
+
+                    if (result) {
+                        gameData.lastAdPost = Date.now(); // حفظ وقت النشر بعد نجاح المعاملة
+                        saveGame();
+                        showToast("Payment Verified! Publishing...", "success");
+                        await sendAdToTelegram(text, tierData.count);
+                    }
+                } catch(e) {
+                    console.error(e);
+                    showToast("Payment failed or rejected", "error");
+                }
+            }
+        });
+    }
+}
+async function sendAdToTelegram(text, count) {
+    showToast("Publishing...", "info");
+    const fullMsg = `📢 *ADVERTISEMENT*\n\n${text}\n\n—\n🚀 *H-Coin Robot*`;
+    for(let i=0; i<count; i++) {
+        await fetch(`https://api.telegram.org/bot${AD_CHANNELS[i].botToken}/sendMessage`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: AD_CHANNELS[i].chatId, text: fullMsg, parse_mode: 'Markdown' })
+        });
+    }
+    showToast("Ad is Live! ✅", "success");
+    closeAdsManager();
+}
+
+    const SKINS = [
+        { id: 'default', name: 'Original', price: 0, type: 'owned', img: 'https://raw.githubusercontent.com/halthalk/car/cfdeeba8911952a1ec29378f39476f1cec9c649e/20260114_190253.png' },
+        { id: 'skin_1m', name: 'Gold Coin', price: 1000000, type: 'point', img: 'https://raw.githubusercontent.com/halthalk/coin/b250dd5d923dafac47c1faec4796349518ce6d46/20260116_212057.png' },
+        { id: 'skin_1.5a', name: 'Crystal Coin', price: 1500000, type: 'point', img: 'https://raw.githubusercontent.com/halthalk/coin/f6e670eab917f867b2c8536664e2e969211b61b8/20260116_211035.png' },
+        { id: 'skin_1.5b', name: 'Electric Coin', price: 1500000, type: 'point', img: 'https://raw.githubusercontent.com/halthalk/coin/81f182ea430598cf8b1186085c6aa2df132968ac/20260118_115054.png' },
+        { id: 'skin_2m', name: 'Reven Coin', price: 2000000, type: 'point', img: 'https://raw.githubusercontent.com/halthalk/coin/4ae4e008b3b8fc1aa23934898b8c89d8a4ae304e/20260118_114817.png' },
+        { id: 'skin_ton', name: 'Black Dragon', price: 2, type: 'ton', img: 'https://raw.githubusercontent.com/halthalk/coin/7cbfcce9a8bb15e6e7f052022d57898b5ad68276/20260116_211242.png' },
+        { id: 'skin_ruby', name: 'Black Demon', price: 2, type: 'ton', img: 'https://raw.githubusercontent.com/halthalk/coin/87eed3b530f84e18772b1d8cf49f3383a119f5e4/20260116_212309.png' },
+        { id: 'skin_emerald', name: 'Evil Mummy', price: 2, type: 'ton', img: 'https://raw.githubusercontent.com/halthalk/coin/5997c61988fb6c64cd4a01e91dbb83b41a66fa9c/20260117_174920.png' },
+        { id: 'skin_galaxy', name: 'Raven Doom', price: 2, type: 'ton', img: 'https://raw.githubusercontent.com/halthalk/coin/cdc2694c2e8b3cd62e18f092cef88d3c34caefa1/20260118_114917.png' },
+        { id: 'skin_royal', name: 'Lightning Coin', price: 1.5, type: 'ton', img: 'https://raw.githubusercontent.com/halthalk/coin/2c22a60df390d2bbfb6aebdf76eee68760d001db/20260118_115259.png' }
+    ];
+    // --- GAME DATA ---
+    const RANKS = [
+        { name: "Bronze", threshold: 0 },
+        { name: "Silver", threshold: 5000 },
+        { name: "Gold", threshold: 25000 },
+        { name: "Platinum", threshold: 100000 },
+        { name: "Diamond", threshold: 1000000 },
+        { name: "Master", threshold: 10000000 },
+        { name: "GrandMaster", threshold: 50000000 },
+        { name: "Elite", threshold: 100000000 },
+        { name: "Legendary", threshold: 500000000 },
+        { name: "Mythic", threshold: 1000000000 }
+    ];
+
+    let gameData = {
+        score: 0, energy: 1000, maxEnergy: 1000, tapValue: 1, regenRate: 1,
+        lastSave: Date.now(), totalTaps: 0,
+        isPremium: false,
+premiumUntil: 0, // الوقت اللي هينتهي فيه البريميوم
+lastAdPost: 0,   // عشان عداد الإعلانات
+        invites: 0,
+        upgrades: { multitap: 1, energy: 1, speed: 1, bot: 0 },
+        daily: { streak: 0, lastClaim: 0 },
+        tasks: [],
+        startedTasks: [],
+        wallet: null,
+        // ميزات السكنات الجديدة
+        ownedSkins: ['default'], 
+        activeSkin: 'default'
+    };
+    const BOOSTS = {
+        multitap: { name: "Multitap", base: 500, desc: "+1 per tap" },
+        energy: { name: "Energy Limit", base: 1000, desc: "+500 max energy" },
+        speed: { name: "Recharging", base: 2000, desc: "Faster energy" },
+        bot: { name: "Tap Bot", base: 50000, desc: "Auto mine offline" }
+    };
+
+const TASKS_DB = [
+    { id: 'hcoin_community', title: 'Join H-Coin Community', reward: 5000, url: 'https://t.me/HCoin_community' },
+    { id: 'hcoin_ads', title: 'Join H-Coin Ads Channel', reward: 5000, url: 'https://t.me/HCoinAds' },
+    { id: 'hcoin_ai', title: 'Join H-Coin AI Channel', reward: 5000, url: 'https://t.me/HCoinAi' }, 
+    { id: 'hcoin_crypto', title: 'Join H-Coin Crypto', reward: 5000, url: 'https://t.me/HCoinCrypto' },
+    { id: 'hcoin_channel', title: 'Join H-Coin Channel', reward: 5000, url: 'https://t.me/HCoinChannel' },
+    { id: 'insta_follow', title: 'Follow on Instagram', reward: 5000, url: 'https://www.instagram.com/h__coin?igsh=MXI1aHg1M3ZkY2QxdQ==' },
+    { id: 'youtube_sub', title: 'Subscribe on YouTube', reward: 7000, url: 'https://youtube.com/@hcoincommunity?si=NVnXAO_PzBSqARvx' },
+    { id: 'tiktok_follow', title: 'Follow on TikTok', reward: 5000, url: 'https://www.tiktok.com/@h_coin_?_r=1&_t=ZS-93E7lc1UyAM' },
+    { id: 'facebook_page1', title: 'Follow Facebook Page 1', reward: 3000, url: 'https://www.facebook.com/share/1N25n5ixAu/' },
+    { id: 'facebook_page2', title: 'Follow Facebook Page 2', reward: 3000, url: 'https://www.facebook.com/share/1BAWYFrorM/' },
+    { id: 'whatsapp_chan', title: 'Join WhatsApp Channel', reward: 5000, url: 'https://whatsapp.com/channel/0029VbCE5zFG3R3kNMcLik1E' },
+    { id: 'twitter_old', title: 'Follow on X', reward: 5000, url: 'https://x.com/HCoinAi' }
+];
+
+    let turboActive = false;
+
+    // --- Notifications ---
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let icon = 'ℹ️';
+        if(type === 'success') icon = '✅';
+        if(type === 'error') icon = '❌';
+
+        toast.innerHTML = `
+            <div style="font-size:20px;">${icon}</div>
+            <div style="font-size:14px; font-weight:bold;">${msg}</div>
+        `;
+        
+        container.appendChild(toast);
+        if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(type === 'error' ? 'error' : 'success');
+
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // --- Modal Logic ---
+    let currentConfirmCallback = null;
+    function showModal(title, msg, callback) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-msg').innerText = msg;
+        currentConfirmCallback = callback;
+        document.getElementById('custom-modal').style.display = 'flex';
+        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    }
+
+    function closeModal() {
+        document.getElementById('custom-modal').style.display = 'none';
+        currentConfirmCallback = null;
+    }
+
+    document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+        if (currentConfirmCallback) currentConfirmCallback(true);
+        closeModal();
+    });
+
+    // --- Initialization ---
+    function init() {
+        const saved = localStorage.getItem('hcoin_pro_v2'); 
+        if (saved) {
+            let parsed = JSON.parse(saved);
+                function init() {
+        const saved = localStorage.getItem('hcoin_pro_v2'); 
+        if (saved) {
+            let parsed = JSON.parse(saved); // السطر اللي بتبحث عنه
+            
+            // الكود الجديد بيتحط هنا -------------------
+            if (gameData.isPremium && gameData.premiumUntil > Date.now()) {
+                startPremiumTimer();
+            } else if (gameData.premiumUntil > 0 && gameData.premiumUntil <= Date.now()) {
+                gameData.isPremium = false;
+                gameData.premiumUntil = 0;
+                saveGame();
+            }
+            // ----------------------------------------
+
+            Object.assign(gameData, parsed);
+            
+            // التأكد من وجود بيانات السكنات في حالة التحديث من نسخة قديمة
+            if(!gameData.ownedSkins) gameData.ownedSkins = ['default'];
+            if(!gameData.activeSkin) gameData.activeSkin = 'default';
+            if(!gameData.startedTasks) gameData.startedTasks = [];
+            if(!gameData.invites) gameData.invites = 0;
+
+            // حساب الوقت اللي فات وأنت قافل اللعبة
+            let seconds = (Date.now() - gameData.lastSave) / 1000;
+            
+            // 1. تجديد الطاقة وأنت قافل
+            gameData.energy = Math.min(gameData.maxEnergy, gameData.energy + (seconds * gameData.regenRate));
+            
+            // 2. ميزة بوت التعدين (Bot Offline Mining)
+            if(gameData.upgrades.bot > 0 && seconds > 60) {
+                let earned = Math.floor(seconds * gameData.upgrades.bot);
+                if(gameData.isPremium) earned *= 2; // ميزة البريميوم تضاعف ربح البوت
+
+                if(earned > 0) {
+                    gameData.score += earned;
+                    showToast(`🤖 Bot mined ${earned.toLocaleString()} coins!`, 'success');
+                }
+            }
+        }
+        
+        // تشغيل كل الوظائف الأساسية
+        setupProfile();
+        checkWalletConnection();
+        checkPremiumVisuals();
+        renderBoosts();
+        renderDaily();
+        renderTasks();
+        renderLeaderboard();
+        
+        // تشغيل نظام السكنات
+        renderShop();
+        applySkin();
+
+        updateUI();
+
+        // تشغيل المؤقتات (التوفير وتجديد الطاقة)
+        setInterval(saveGame, 2000);
+        setInterval(regenEnergy, 1000);
+        scheduleRocket();
+        scheduleChest();
+
+
+        // مراقب تغييرات المحفظة
+        tonConnectUI.onStatusChange(wallet => {
+            if(wallet) {
+                gameData.wallet = wallet.account.address;
+                showToast("Wallet Connected Successfully! 💼", "success");
+            } else {
+                gameData.wallet = null;
+            }
+            setupProfile();
+            saveGame();
+        });
+    }
+    // --- Profile & Wallet Logic ---
+function setupProfile() {
+    const user = tg.initDataUnsafe.user || { first_name: "Guest", username: "guest", id: "000000", language_code: "en" };
+    
+    // كود علامة التوثيق الزرقاء الحقيقية (SVG)
+    const blueBadgeSVG = `<svg style="width:18px; height:18px; margin-left:5px; vertical-align:middle;" viewBox="0 0 24 24"><path fill="#0098EA" d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" /></svg>`;
+
+    // عرض الاسم مع العلامة الزرقاء فقط إذا كان المستخدم بريميوم
+    document.getElementById('profile-name').innerHTML = user.first_name + (gameData.isPremium ? blueBadgeSVG : '');
+    
+    document.getElementById('profile-username').innerText = user.username ? '@' + user.username : 'No Username';
+    document.getElementById('profile-id').innerText = user.id;
+    document.getElementById('profile-lang').innerText = (user.language_code || 'en').toUpperCase();
+    
+    if(gameData.isPremium) {
+        const premEl = document.getElementById('profile-premium');
+        premEl.innerText = "VIP MEMBER 💎"; 
+        premEl.style.color = "#9d00ff";
+    }
+
+    if(user.photo_url) {
+        document.getElementById('profile-avatar').innerHTML = `<img src="${user.photo_url}">`;
+    } else {
+        document.getElementById('profile-avatar').innerText = user.first_name.charAt(0);
+    }
+
+    // إدارة حالة زر المحفظة (Wallet Button)
+    const walletBtn = document.getElementById('btn-connect-wallet');
+    if (tonConnectUI.connected) {
+        const addr = tonConnectUI.account.address;
+        const shortAddr = addr.slice(0, 4) + '...' + addr.slice(-4);
+        walletBtn.innerHTML = `<span style="color:#00ff88">●</span> ${shortAddr}`;
+        walletBtn.classList.add('wallet-connected');
+        walletBtn.onclick = () => {
+            showModal("Disconnect?", "Do you want to disconnect wallet?", (ok) => {
+                if(ok) tonConnectUI.disconnect();
+            });
+        };
+    } else {
+        walletBtn.innerHTML = `<span>💼</span> Connect TON Wallet`;
+        walletBtn.classList.remove('wallet-connected');
+        walletBtn.onclick = connectWallet;
+    }
+}
+
+    async function connectWallet() {
+        try {
+            await tonConnectUI.openModal();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function checkWalletConnection() {
+        // Just triggers UI update, listener handles the rest
+        setupProfile();
+    }
+
+    // --- Premium Payment System (TON) ---
+    async function buyPremium() {
+        if(gameData.isPremium) {
+            showToast("You are already Premium! 💎", "info");
+            return;
+        }
+
+        if (!tonConnectUI.connected) {
+            showToast("Please connect wallet first!", "error");
+            await tonConnectUI.openModal();
+            return;
+        }
+
+        showModal("Buy Premium", `Upgrade for ${PREMIUM_PRICE_TON} TON?`, async (ok) => {
+            if(ok) {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600, 
+                    messages: [
+                        {
+                            address: MY_WALLET_ADDRESS,
+                            amount: PREMIUM_PRICE_NANO, // 5 TON
+                        }
+                    ]
+                };
+
+                try {
+                    showToast("Please verify inside your wallet...", "info");
+                    await tonConnectUI.sendTransaction(transaction);
+                    
+                    // Success
+                    showToast("Payment Successful! Welcome VIP 💎", "success");
+                    activatePremiumFeatures();
+                    
+                } catch (e) {
+                    console.error("Payment Error:", e);
+                    showToast("Payment Cancelled or Failed", "error");
+                }
+            }
+        });
+    }
+
+    function activatePremiumFeatures() {
+        gameData.isPremium = true;
+        gameData.premiumUntil = 0; // مهم جداً: تصفير العداد عشان يبقى دائم
+        gameData.maxEnergy += 5000;
+        gameData.energy = gameData.maxEnergy;
+        checkPremiumVisuals();
+        setupProfile(); // تحديث البروفايل فوراً
+        updateUI();
+        saveGame();
+    }
+
+    function checkPremiumVisuals() {
+        const btn = document.getElementById('btn-buy-premium');
+        const statusTxt = document.getElementById('premium-status-text');
+        
+        if (gameData.isPremium) {
+            document.body.classList.add('is-premium');
+            btn.innerText = "Premium Active ✅";
+            btn.disabled = true;
+            statusTxt.style.display = "block";
+        } else {
+            document.body.classList.remove('is-premium');
+            btn.disabled = false;
+        }
+    }
+
+    // --- Core Game Logic ---
+    document.getElementById('coin-btn').addEventListener('pointerdown', (e) => {
+        e.preventDefault(); 
+        let touches = e.getClientRects ? 1 : e.touches ? e.touches.length : 1; 
+        
+        if (turboActive || gameData.energy >= gameData.tapValue) {
+            let baseVal = gameData.tapValue;
+            if (gameData.isPremium) baseVal *= 2;
+            let val = turboActive ? baseVal * 5 : baseVal;
+            
+            gameData.score += val;
+            gameData.totalTaps++;
+            if(!turboActive) gameData.energy -= gameData.tapValue;
+            
+            spawnParticle(e.clientX, e.clientY, `+${val}`);
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            
+            const rect = e.target.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width/2;
+            const y = e.clientY - rect.top - rect.height/2;
+            e.currentTarget.style.transform = `perspective(1000px) rotateX(${-y/10}deg) rotateY(${x/10}deg) scale(0.95)`;
+            setTimeout(() => e.currentTarget.style.transform = 'scale(1)', 100);
+            
+            updateUI();
+        }
+    });
+
+    function spawnParticle(x, y, txt) {
+        const p = document.createElement('div');
+        p.className = 'particle'; p.innerText = txt;
+        p.style.left = x + 'px'; p.style.top = y + 'px';
+        const tx = (Math.random() - 0.5) * 100 + 'px';
+        const ty = (Math.random() * -100 - 50) + 'px';
+        p.style.setProperty('--tx', tx);
+        p.style.setProperty('--ty', ty);
+        if(turboActive) p.style.color = '#ff4500';
+        if(gameData.isPremium && !turboActive) p.style.color = '#d000ff'; 
+        
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+    }
+
+    function scheduleRocket() {
+        setTimeout(() => {
+            if(!turboActive && document.getElementById('mine-section').style.display !== 'none') {
+                const r = document.createElement('div');
+                r.className = 'turbo-rocket'; r.innerText = '🚀';
+                r.style.left = Math.random() * 80 + 10 + '%';
+                r.style.top = Math.random() * 60 + 20 + '%';
+                r.onclick = () => {
+                    turboActive = true;
+                    showToast("🚀 TURBO MODE ACTIVATED!", "success");
+                    document.body.classList.add('turbo-active');
+                    document.getElementById('coin-visual').classList.add('turbo');
+                    r.remove();
+                    setTimeout(() => {
+                        turboActive = false;
+                        document.body.classList.remove('turbo-active');
+                        document.getElementById('coin-visual').classList.remove('turbo');
+                    }, 10000);
+                };
+                document.body.appendChild(r);
+                setTimeout(() => r.remove(), 4000);
+            }
+            scheduleRocket();
+        }, Math.random() * 15000 + 10000);
+    }
+
+    // --- Daily Rewards ---
+    function renderDaily() {
+        const grid = document.getElementById('daily-grid');
+        grid.innerHTML = '';
+        const rewards = [500, 1000, 2500, 5000, 15000, 50000, 100000];
+        const now = Date.now();
+        const oneDay = 86400000;
+        
+        const isClaimable = (now - gameData.daily.lastClaim) > oneDay;
+        const streak = gameData.daily.streak;
+
+        rewards.forEach((val, i) => {
+            const div = document.createElement('div');
+            div.className = `daily-item ${i < streak ? 'claimed' : (i === streak && isClaimable ? 'active' : '')}`;
+            div.innerHTML = `<div class="daily-day">Day ${i+1}</div><div class="daily-val">${val/1000}K</div>`;
+            grid.appendChild(div);
+        });
+
+        const btn = document.getElementById('btn-claim-daily');
+        if (isClaimable && streak < 7) {
+            btn.disabled = false;
+            btn.innerText = "Claim Reward";
+            btn.onclick = () => {
+                gameData.score += rewards[streak];
+                gameData.daily.streak++;
+                gameData.daily.lastClaim = Date.now();
+                if(gameData.daily.streak >= 7) gameData.daily.streak = 0;
+                showToast(`Claimed ${rewards[streak]} coins!`, "success");
+                renderDaily(); updateUI(); saveGame();
+            };
+        } else {
+            btn.disabled = true;
+            btn.innerText = streak >= 7 ? "Cycle Completed" : "Come back tomorrow";
+        }
+    }
+
+    // --- Tasks ---
+    function renderTasks() {
+        const list = document.getElementById('tasks-list');
+        list.innerHTML = '';
+        TASKS_DB.forEach(task => {
+            const isDone = gameData.tasks.includes(task.id);
+            const isStarted = gameData.startedTasks.includes(task.id);
+            
+            const div = document.createElement('div');
+            div.className = 'task-row';
+            div.style.opacity = isDone ? '0.5' : '1';
+            
+            let btnHtml = '';
+            if (isDone) {
+                btnHtml = '✅';
+            } else if (isStarted) {
+                btnHtml = `<button class="btn-primary btn-check" style="width:auto; padding:5px 15px; font-size:12px;" onclick="checkTask('${task.id}')">Check</button>`;
+            } else {
+                btnHtml = `<button class="btn-primary" style="width:auto; padding:5px 15px; font-size:12px;" onclick="startTask('${task.id}')">Start</button>`;
+            }
+
+            div.innerHTML = `
+                <div class="task-info">
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-reward">+${task.reward.toLocaleString()}</div>
+                </div>
+                ${btnHtml}
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function startTask(id) {
+        const task = TASKS_DB.find(t => t.id === id);
+        if(!task) return;
+
+        if(task.id === 'share_story') {
+             const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "000";
+             const inviteLink = `https://t.me/${BOT_USERNAME}?start=${userId}`;
+             const text = `🔥 Join me on H-Coin Pro! Mining is live $HCOIN.\n${inviteLink}`;
+             const url = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(text)}`;
+             tg.openTelegramLink(url);
+        } else {
+            if(task.url !== '#') tg.openLink(task.url);
+        }
+
+        if(!gameData.startedTasks.includes(id)) {
+            gameData.startedTasks.push(id);
+        }
+        
+        saveGame();
+        renderTasks();
+    }
+
+    function checkTask(id) {
+        const task = TASKS_DB.find(t => t.id === id);
+        if(!task) return;
+        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        gameData.score += task.reward;
+        gameData.tasks.push(id);
+        gameData.startedTasks = gameData.startedTasks.filter(tid => tid !== id);
+        showToast(`Task Verified! +${task.reward.toLocaleString()}`, "success");
+        saveGame();
+        renderTasks();
+        updateUI();
+    }
+
+    function inviteFriend() {
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "000";
+        const inviteLink = `https://t.me/${BOT_USERNAME}?start=${userId}`;
+        const shareText = `🚀 Join me on H-Coin Pro! Mine $HCOIN and compete.\n\n👇 Start here:\n${inviteLink}`;
+        
+        const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
+        tg.openTelegramLink(fullUrl);
+
+        showToast("Invite link opened! Simulation rewards...", "success");
+        setTimeout(() => {
+            gameData.invites++;
+            gameData.score += 500;
+            showToast("+500 Coins & +1 Invite (Simulated)", "success");
+            updateUI();
+            saveGame();
+        }, 1000);
+    }
+
+    // --- Upgrades ---
+    function renderBoosts() {
+        const list = document.getElementById('boosts-list');
+        list.innerHTML = '';
+        for (let key in BOOSTS) {
+            const lvl = gameData.upgrades[key];
+            const cost = Math.floor(BOOSTS[key].base * Math.pow(1.8, lvl));
+            const isBot = key === 'bot';
+            const maxed = isBot && lvl > 0;
+            
+            const div = document.createElement('div');
+            div.className = 'card task-row';
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; font-size:16px;">${BOOSTS[key].name} <span style="color:var(--gold); font-size:12px;">Lvl ${lvl}</span></div>
+                    <div style="color:#888; font-size:12px;">${BOOSTS[key].desc}</div>
+                </div>
+                <button class="btn-primary" style="width:auto;" onclick="buy('${key}')" ${maxed ? 'disabled' : ''}>
+                    ${maxed ? 'Owned' : `💰 ${cost.toLocaleString()}`}
+                </button>
+            `;
+            list.appendChild(div);
+        }
+    }
+
+    function buy(key) {
+        const lvl = gameData.upgrades[key];
+        const cost = Math.floor(BOOSTS[key].base * Math.pow(1.8, lvl));
+        if (gameData.score >= cost) {
+            gameData.score -= cost;
+            gameData.upgrades[key]++;
+            if(key === 'multitap') gameData.tapValue++;
+            if(key === 'energy') gameData.maxEnergy += 500;
+            if(key === 'speed') gameData.regenRate++;
+            
+            showToast("Upgrade Successful!", "success");
+            renderBoosts(); updateUI();
+            if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        } else {
+            showToast("Not enough coins!", "error");
+        }
+    }
+
+    // --- UI Updates ---
+    function updateUI() {
+        document.getElementById('score').innerText = Math.floor(gameData.score).toLocaleString();
+        document.getElementById('curr-energy').innerText = Math.floor(gameData.energy);
+        document.getElementById('max-energy').innerText = gameData.maxEnergy.toLocaleString();
+        document.getElementById('energy-fill').style.width = (gameData.energy / gameData.maxEnergy * 100) + '%';
+        document.getElementById('profile-taps').innerText = gameData.totalTaps.toLocaleString();
+        document.getElementById('profile-invites').innerText = gameData.invites.toLocaleString();
+
+        let currentRank = RANKS[0];
+        for (let i = 0; i < RANKS.length; i++) {
+            if (gameData.score >= RANKS[i].threshold) currentRank = RANKS[i];
+        }
+
+        let rankText = currentRank.name;
+        if(gameData.isPremium) rankText += " 💎";
+        document.getElementById('league-display').innerText = rankText;
+        
+        document.body.className = ''; 
+        if (turboActive) {
+            document.body.classList.add('turbo-active');
+        } else {
+            document.body.classList.add(`rank-${currentRank.name.replace(/\s+/g, '')}`);
+            if (gameData.isPremium) {
+                document.body.classList.add('is-premium');
+            }
+        }
+    }
+
+function renderLeaderboard() {
+    const list = document.getElementById('leaderboard-list');
+    
+    // 1. حساب "خسارة الترتيب" بناءً على الوقت (وهمي)
+    // بنفترض إن كل ساعة مرت من غير لعب، المستخدم بيتأخر 50 مركز
+    const now = Date.now();
+    const lastActive = gameData.lastSave || now; // تأكد من وجود timestamp عند الحفظ
+    const hoursAway = Math.floor((now - lastActive) / (1000 * 60 * 60));
+    const rankPenalty = hoursAway * 50; 
+
+    // 2. معادلة المركز الأساسية
+    let upgradeBonus = (gameData.upgrades.multitap + gameData.upgrades.energy + gameData.upgrades.speed) * 500;
+    let effectiveScore = gameData.score + upgradeBonus;
+    let baseRank = 185432; 
+    let rankImprovement = Math.floor(Math.sqrt(effectiveScore) * 15);
+    
+    // المركز النهائي = المركز الأساسي - التحسن + العقوبة
+    let currentRank = Math.max(124, (baseRank - rankImprovement) + rankPenalty);
+
+    let randomMiners = Math.floor(Math.random() * (108000 - 102000 + 1)) + 102000;
+
+    const goldBadge = `<svg style="width:14px; height:14px; margin-left:4px; vertical-align:middle;" viewBox="0 0 24 24"><path fill="#ffd700" d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" /></svg>`;
+    const blueBadge = `<svg style="width:14px; height:14px; margin-left:4px; vertical-align:middle;" viewBox="0 0 24 24"><path fill="#0098EA" d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" /></svg>`;
+
+    const topWhales = [
+        { name: "evar", score: 250000000, img: "E", color: "#ffd700", badge: goldBadge },
+        { name: "Lego", score: 185000000, img: "L", color: "#ff3333", badge: blueBadge },
+        { name: "Black Demon", score: 95000000, img: "B", color: "#0098EA", badge: blueBadge },
+        { name: "Crypto_Shark", score: 52000000, img: "C", color: "#00ff88", badge: blueBadge },
+        { name: "mr coin", score: 31000000, img: "M", color: "#ffffff", badge: blueBadge }
+    ];
+
+    let html = '';
+
+    topWhales.forEach((u, i) => {
+        html += `
+            <div class="leaderboard-row">
+                <div class="rank-num rank-${i+1}">${i+1}</div>
+                <div class="lb-user">
+                    <div class="lb-avatar" style="border: 1px solid ${u.color}; color:${u.color}">${u.img}</div>
+                    <div style="font-weight:bold; display:flex; align-items:center;">${u.name} ${u.badge}</div>
+                </div>
+                <div class="lb-score">${u.score.toLocaleString()}</div>
+            </div>`;
+    });
+
+    html += `<div style="text-align:center; margin: 15px 0; color:#444; font-size:9px;">••• CONNECTED TO H-NETWORK •••</div>`;
+
+    // 3. جزء المستخدم مع حل مشكلة التداخل (Padding & Margin)
+    const userName = tg.initDataUnsafe.user?.first_name || 'Player';
+    const userBadge = gameData.isPremium ? blueBadge : ''; 
+    
+    html += `
+        <div class="leaderboard-row" style="background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, transparent 100%); border: 1px solid rgba(255,215,0,0.3); border-radius: 12px; margin-top: 10px;">
+            <div class="rank-num" style="color:var(--gold); min-width: 80px; text-align: left; padding-left: 10px;">#${currentRank.toLocaleString()}</div>
+            <div class="lb-user" style="margin-left: 15px;"> <div class="lb-avatar" style="background:var(--gold); color:black; font-weight:bold;">YOU</div>
+                <div style="font-weight:bold; display:flex; align-items:center;">${userName} ${userBadge}</div>
+            </div>
+            <div class="lb-score" style="color:var(--gold)">${Math.floor(gameData.score).toLocaleString()}</div>
+        </div>`;
+
+    html += `
+        <div style="text-align:center; padding:15px; color:#666; font-size:11px;">
+            <span style="color:#00ff88">●</span> <b>${randomMiners.toLocaleString()}</b> Miners Online
+            ${hoursAway > 0 ? `<div style="color:#ff4444; font-size:9px; margin-top:5px;">⚠️ Rank dropped by ${rankPenalty} due to inactivity</div>` : ''}
+        </div>`;
+
+    list.innerHTML = html;
+}
+
+    function regenEnergy() {
+        if(gameData.energy < gameData.maxEnergy) {
+            gameData.energy = Math.min(gameData.maxEnergy, gameData.energy + gameData.regenRate);
+            updateUI();
+        }
+    }
+
+    function saveGame() {
+        gameData.lastSave = Date.now();
+        localStorage.setItem('hcoin_pro_v2', JSON.stringify(gameData));
+    }
+
+    function nav(tab, btn) {
+        document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+        document.getElementById('mine-section').style.display = 'none';
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        
+        btn.classList.add('active');
+        if(tab === 'mine') {
+            document.getElementById('mine-section').style.display = 'flex';
+        } else {
+            document.getElementById(tab+'-section').style.display = 'block';
+            if(tab === 'profile') renderLeaderboard(); 
+            // التعديل الجديد هنا عشان يظهر المتجر لما تضغط عليه
+            if(tab === 'shop') renderShop(); 
+        }
+        if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
+        // --- Shop Functions ---
+    function renderShop() {
+        const container = document.getElementById('shop-container');
+        container.innerHTML = '';
+
+        SKINS.forEach(skin => {
+            const isOwned = gameData.ownedSkins.includes(skin.id);
+            const isActive = gameData.activeSkin === skin.id;
+            
+            let btnClass = 'btn-buy-point';
+            let btnText = `💰 ${(skin.price/1000000)}M`;
+            let clickAction = `buySkin('${skin.id}')`;
+
+            if(skin.type === 'ton') {
+                btnClass = 'btn-buy-ton';
+                btnText = `💎 ${skin.price} TON`;
+            }
+
+            if(isOwned) {
+                if(isActive) {
+                    btnClass = 'btn-used';
+                    btnText = 'USED';
+                    clickAction = '';
+                } else {
+                    btnClass = 'btn-select';
+                    btnText = 'Select';
+                    clickAction = `selectSkin('${skin.id}')`;
+                }
+            } else if (skin.price === 0) {
+                 btnText = 'Free';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'shop-card';
+            div.innerHTML = `
+                <img src="${skin.img}">
+                <h4>${skin.name}</h4>
+                <button class="btn-shop ${btnClass}" onclick="${clickAction}" ${isActive ? 'disabled' : ''}>${btnText}</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function selectSkin(id) {
+        gameData.activeSkin = id;
+        applySkin();
+        renderShop();
+        saveGame();
+        if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
+
+        function applySkin() {
+        const skin = SKINS.find(s => s.id === gameData.activeSkin);
+        if(skin) {
+            document.querySelector('#coin-visual img').src = skin.img;
+        }
+    }
+
+    // --- LUCKY CHEST & TRIAL PREMIUM SYSTEM (NEW ADDITION) ---
+    function spawnLuckyChest() {
+        // لا يظهر الصندوق إلا في صفحة التعدين
+        if (document.getElementById('mine-section').style.display === 'none') return;
+
+        const chest = document.createElement('div');
+        chest.className = 'lucky-chest';
+        chest.innerHTML = '🎁';
+        
+        // تحديد مكان عشوائي للصندوق
+        chest.style.left = Math.random() * 70 + 15 + '%';
+        chest.style.top = Math.random() * 50 + 20 + '%';
+
+        chest.onclick = () => {
+            openChest(chest);
+        };
+
+        document.body.appendChild(chest);
+
+        // الصندوق يختفي تلقائياً بعد 8 ثواني لو المستخدم مالحقش يفتحه
+        setTimeout(() => { 
+            if(chest.parentNode) chest.remove(); 
+        }, 8000);
+    }
+
+    function openChest(chestElement) {
+        const rewards = [
+            { name: "Mega Coins", val: 50000, type: 'coins', icon: '💰' },
+            { name: "Mega Coins", val: 50000, type: 'coins', icon: '💰' },
+            { name: "free Coins", val: 25000, type: 'coins', icon: '💰' },
+            { name: "free Coins", val: 25000, type: 'coins', icon: '💰' },
+            { name: "free Coins", val: 5000, type: 'coins', icon: '💰' },
+            { name: "Energy Refill", val: 1000, type: 'energy', icon: '⚡' },
+            { name: "Energy Refill", val: 1000, type: 'energy', icon: '⚡' },
+            { name: "Jackpot", val: 250000, type: 'coins', icon: '🔥' },
+            { name: "VIP Trial (1m)", val: 1, type: 'premium_temp', icon: '💎' },
+            { name: "VIP Trial (1m)", val: 1, type: 'premium_temp', icon: '💎' },
+            { name: "VIP Trial (1m)", val: 1, type: 'premium_temp', icon: '💎' }
+        ];
+
+        // اختيار جائزة عشوائية
+        const reward = rewards[Math.floor(Math.random() * rewards.length)];
+
+        if (reward.type === 'coins') {
+            gameData.score += reward.val;
+        } else if (reward.type === 'energy') {
+            gameData.energy = Math.min(gameData.maxEnergy, gameData.energy + reward.val);
+        } else if (reward.type === 'premium_temp') {
+            activateTemporaryPremium(reward.val);
+        }
+
+        showToast(`LUCKY CHEST: ${reward.icon} ${reward.name}`, "success");
+        
+        // تأثير بسيط عند الفتح قبل المسح
+        chestElement.innerHTML = '✨';
+        chestElement.style.pointerEvents = 'none';
+        setTimeout(() => chestElement.remove(), 500);
+        
+        updateUI();
+        saveGame();
+    }
+
+    function activateTemporaryPremium(minutes) {
+        // لو بريميوم دائم (premiumUntil === 0)
+        if (gameData.isPremium && gameData.premiumUntil === 0) {
+            gameData.score += 100000;
+            showToast("Already VIP! Gift: +100k Coins 🎁", "success");
+            return;
+        }
+
+        // حساب وقت الانتهاء (الوقت الحالي + الدقائق)
+        gameData.premiumUntil = Date.now() + (minutes * 60 * 1000);
+        gameData.isPremium = true;
+        
+        checkPremiumVisuals();
+        setupProfile();
+        saveGame();
+        startPremiumTimer(); // تشغيل العداد
+    }
+
+    function startPremiumTimer() {
+        const timerEl = document.getElementById('premium-timer');
+        
+        const checkInterval = setInterval(() => {
+            // لو بقى دائم فجأة (اشترى من المتجر)
+            if (gameData.premiumUntil === 0) {
+                clearInterval(checkInterval);
+                if (timerEl) timerEl.style.display = 'none';
+                return;
+            }
+
+            const now = Date.now();
+            const timeLeft = gameData.premiumUntil - now;
+
+            if (timeLeft > 0) {
+                if (timerEl) {
+                    timerEl.style.display = 'block';
+                    let m = Math.floor(timeLeft / 60000);
+                    let s = Math.floor((timeLeft % 60000) / 1000);
+                    timerEl.innerText = `💎 TRIAL: ${m}:${s < 10 ? '0'+s : s}`;
+                }
+            } else {
+                // انتهى الوقت
+                clearInterval(checkInterval);
+                gameData.isPremium = false;
+                gameData.premiumUntil = 0;
+                if (timerEl) timerEl.style.display = 'none';
+                checkPremiumVisuals();
+                setupProfile();
+                showToast("Trial ended! Get VIP 💎", "info");
+                saveGame();
+            }
+        }, 1000);
+    }
+
+    function scheduleChest() {
+        // يظهر الصندوق كل فترة بين دقيقة و 3 دقائق
+        let nextSpawn = Math.random() * (180000 - 60000) + 60000;
+        setTimeout(() => {
+            spawnLuckyChest();
+            scheduleChest();
+        }, nextSpawn);
+    }
+
+    function buySkin(id) {
+        const skin = SKINS.find(s => s.id === id);
+        
+        if(skin.type === 'ton') {
+            if(!tonConnectUI.connected) {
+                showToast("Connect Wallet first!", "error");
+                return;
+            }
+            showModal("Buy Skin", `Purchase for ${skin.price} TON?`, async (ok) => {
+                if(ok) {
+                    const amountNano = (skin.price * 1000000000).toString();
+                    const tx = {
+                        validUntil: Math.floor(Date.now() / 1000) + 600,
+                        messages: [{ address: MY_WALLET_ADDRESS, amount: amountNano }]
+                    };
+                    try {
+                        await tonConnectUI.sendTransaction(tx);
+                        gameData.ownedSkins.push(id);
+                        showToast("Skin Purchased!", "success");
+                        renderShop(); saveGame();
+                    } catch(e) { showToast("Transaction Failed", "error"); }
+                }
+            });
+        } else {
+            // Points Purchase
+            if(gameData.score >= skin.price) {
+                showModal("Buy Skin", `Purchase for ${skin.price.toLocaleString()} coins?`, (ok) => {
+                    if(ok) {
+                        gameData.score -= skin.price;
+                        gameData.ownedSkins.push(id);
+                        showToast("Skin Unlocked!", "success");
+                        renderShop(); updateUI(); saveGame();
+                    }
+                });
+            } else {
+                showToast("Not enough coins!", "error");
+            }
+        }
+    }
+    function createMythicStars() {
+    if (!document.body.classList.contains('rank-Mythic')) return;
+    const star = document.createElement('div');
+    star.className = 'shooting-star';
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.top = Math.random() * -20 + 'vh';
+    const rand = Math.random();
+    let color = "#ffffff"; 
+    if (rand > 0.7) color = "#ffea00"; 
+    if (rand > 0.95) color = "#ff3333"; 
+    star.style.background = `linear-gradient(to bottom, transparent, ${color})`;
+    star.style.boxShadow = `0 0 15px ${color}`;
+    const duration = Math.random() * 1.5 + 1; 
+    star.style.animation = `shoot ${duration}s linear forwards`;
+    document.body.appendChild(star);
+    setTimeout(() => { star.remove(); }, duration * 1000);
+}
+setInterval(createMythicStars, 400);
+
+    window.onload = init;
+</script>
+
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+
+</body>
+</html>
